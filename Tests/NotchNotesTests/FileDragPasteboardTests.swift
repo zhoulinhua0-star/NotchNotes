@@ -58,4 +58,13 @@ final class FileDragPasteboardTests: XCTestCase {
             )
         )
     }
+
+    func testFileShelfHoverTrackingWorksWhileAppIsInactive() {
+        let options = FileShelfHoverTrackingPolicy.options
+
+        XCTAssertTrue(options.contains(.mouseEnteredAndExited))
+        XCTAssertTrue(options.contains(.activeAlways))
+        XCTAssertTrue(options.contains(.inVisibleRect))
+        XCTAssertFalse(options.contains(.activeInActiveApp))
+    }
 }

@@ -4,7 +4,7 @@ import XCTest
 
 @MainActor
 final class FileShelfStoreTests: XCTestCase {
-    func testShelfDeduplicatesPersistsAndNeverDeletesOriginalFile() throws {
+    func testShelfDeduplicatesOneAdditionPersistsAndNeverDeletesOriginalFile() throws {
         let suiteName = "FileShelfStoreTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
         let temporaryDirectory = FileManager.default.temporaryDirectory
@@ -79,7 +79,9 @@ final class FileShelfStoreTests: XCTestCase {
 
         XCTAssertTrue(store.acceptDrop([fileURL]))
         XCTAssertTrue(store.acceptDrop([fileURL]))
-        XCTAssertEqual(store.items.count, 1)
+        XCTAssertEqual(store.items.count, 2)
+        XCTAssertEqual(Set(store.items.map(\.id)).count, 2)
+        XCTAssertEqual(store.items.map(\.fallbackPath), [fileURL.path, fileURL.path])
     }
 
     func testShelfIgnoresLegacyTransferMetadata() throws {

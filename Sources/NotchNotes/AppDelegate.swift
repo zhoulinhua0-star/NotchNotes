@@ -1,7 +1,7 @@
 import AppKit
 
 @MainActor
-final class AppDelegate: NSObject, NSApplicationDelegate {
+final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var panelController: NotchPanelController?
     private var statusItem: NSStatusItem?
 
@@ -9,141 +9,126 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelController = NotchPanelController()
         panelController?.showDocked()
         buildStatusItem()
-        buildMenu()
+        buildMainMenu()
     }
 
     func applicationWillTerminate(_ notification: Notification) {
         panelController?.flush()
     }
 
+    func menuNeedsUpdate(_ menu: NSMenu) {
+        populateAppMenu(menu)
+    }
+
     private func buildStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = NSImage(systemSymbolName: "note.text", accessibilityDescription: "NotchNotes")
+        item.button?.image = NSImage(
+            systemSymbolName: "tray.full",
+            accessibilityDescription: "NotchNotes File Shelf"
+        )
         item.button?.imagePosition = .imageOnly
         item.menu = makeAppMenu()
         statusItem = item
     }
 
-    private func buildMenu() {
+    private func buildMainMenu() {
         let rootItem = NSMenuItem(title: "NotchNotes", action: nil, keyEquivalent: "")
         rootItem.submenu = makeAppMenu()
 
-        let editItem = NSMenuItem(title: "Edit", action: nil, keyEquivalent: "")
-        editItem.submenu = makeEditMenu()
-
         let mainMenu = NSMenu()
         mainMenu.addItem(rootItem)
-        mainMenu.addItem(editItem)
         NSApp.mainMenu = mainMenu
     }
 
     private func makeAppMenu() -> NSMenu {
-        let appMenu = NSMenu()
-        let newItem = NSMenuItem(title: "New Note", action: #selector(newNote), keyEquivalent: "n")
-        newItem.target = self
-        appMenu.addItem(newItem)
-
-        let showItem = NSMenuItem(title: "Show Notes", action: #selector(showNotes), keyEquivalent: "")
-        showItem.target = self
-        appMenu.addItem(showItem)
-
-        let hideItem = NSMenuItem(title: "Hide Notes", action: #selector(hideNotes), keyEquivalent: "w")
-        hideItem.target = self
-        appMenu.addItem(hideItem)
-
-        appMenu.addItem(.separator())
-
-        let quitItem = NSMenuItem(title: "Quit NotchNotes", action: #selector(quit), keyEquivalent: "q")
-        quitItem.target = self
-        appMenu.addItem(quitItem)
-
-        return appMenu
+        let menu = NSMenu()
+        menu.delegate = self
+        populateAppMenu(menu)
+        return menu
     }
 
-    private func makeEditMenu() -> NSMenu {
-        let editMenu = NSMenu(title: "Edit")
+    private func populateAppMenu(_ menu: NSMenu) {
+        menu.removeAllItems()
 
-        let undoItem = NSMenuItem(title: "Undo", action: Selector(("undo:")), keyEquivalent: "z")
-        undoItem.target = nil
-        editMenu.addItem(undoItem)
-
-        let redoItem = NSMenuItem(title: "Redo", action: Selector(("redo:")), keyEquivalent: "Z")
-        redoItem.keyEquivalentModifierMask = [.command, .shift]
-        redoItem.target = nil
-        editMenu.addItem(redoItem)
-
-        editMenu.addItem(.separator())
-
-        let cutItem = NSMenuItem(title: "Cut", action: #selector(NSText.cut(_:)), keyEquivalent: "x")
-        cutItem.target = nil
-        editMenu.addItem(cutItem)
-
-        let copyItem = NSMenuItem(title: "Copy", action: #selector(NSText.copy(_:)), keyEquivalent: "c")
-        copyItem.target = nil
-        editMenu.addItem(copyItem)
-
-        let pasteItem = NSMenuItem(title: "Paste", action: #selector(NSText.paste(_:)), keyEquivalent: "v")
-        pasteItem.target = nil
-        editMenu.addItem(pasteItem)
-
-        editMenu.addItem(.separator())
-
-        let selectAllItem = NSMenuItem(title: "Select All", action: #selector(NSText.selectAll(_:)), keyEquivalent: "a")
-        selectAllItem.target = nil
-        editMenu.addItem(selectAllItem)
-
-        editMenu.addItem(.separator())
-
-        let findMenuItem = NSMenuItem(title: "Find", action: nil, keyEquivalent: "")
-        let findMenu = NSMenu(title: "Find")
-        findMenu.addItem(findCommand(
-            title: "Find…",
-            action: .showFindInterface,
-            keyEquivalent: "f"
+        menu.addItem(menuItem(
+            title: "Show File Shelf",
+            action: #selector(showShelf)
         ))
-        findMenu.addItem(findCommand(
-            title: "Find Next",
-            action: .nextMatch,
-            keyEquivalent: "g"
+        menu.addItem(menuItem(
+            title: "Add Files or Folders…",
+            action: #selector(addFiles),
+            keyEquivalent: "o"
         ))
-        let previousItem = findCommand(
-            title: "Find Previous",
-            action: .previousMatch,
-            keyEquivalent: "g"
+
+        let clearItem = menuItem(
+            title: "Clear Shelf",
+            action: #selector(clearShelf)
         )
-        previousItem.keyEquivalentModifierMask = [.command, .shift]
-        findMenu.addItem(previousItem)
-        findMenuItem.submenu = findMenu
-        editMenu.addItem(findMenuItem)
+        clearItem.isEnabled = panelController?.hasShelfItems == true
+        menu.addItem(clearItem)
 
-        return editMenu
+        menu.addItem(.separator())
+
+        let keepAwakeItem = menuItem(
+            title: "Keep Mac Awake",
+            action: #selector(toggleKeepAwake)
+        )
+        keepAwakeItem.state = panelController?.isKeepingAwake == true ? .on : .off
+        menu.addItem(keepAwakeItem)
+
+        let triggerItem = NSMenuItem(title: "Open Shelf With", action: nil, keyEquivalent: "")
+        let triggerMenu = NSMenu(title: "Open Shelf With")
+        for mode in TriggerMode.allCases {
+            let item = menuItem(
+                title: mode.title,
+                action: mode == .click ? #selector(useClickTrigger) : #selector(useHoverTrigger)
+            )
+            item.state = panelController?.triggerMode == mode ? .on : .off
+            triggerMenu.addItem(item)
+        }
+        triggerItem.submenu = triggerMenu
+        menu.addItem(triggerItem)
+
+        menu.addItem(.separator())
+        menu.addItem(menuItem(
+            title: "Quit NotchNotes",
+            action: #selector(quit),
+            keyEquivalent: "q"
+        ))
     }
 
-    private func findCommand(
+    private func menuItem(
         title: String,
-        action: NSTextFinder.Action,
-        keyEquivalent: String
+        action: Selector,
+        keyEquivalent: String = ""
     ) -> NSMenuItem {
-        let item = NSMenuItem(
-            title: title,
-            action: #selector(NSTextView.performFindPanelAction(_:)),
-            keyEquivalent: keyEquivalent
-        )
-        item.tag = action.rawValue
-        item.target = nil
+        let item = NSMenuItem(title: title, action: action, keyEquivalent: keyEquivalent)
+        item.target = self
         return item
     }
 
-    @objc private func newNote() {
-        panelController?.createNote()
-    }
-
-    @objc private func showNotes() {
+    @objc private func showShelf() {
         panelController?.expand(animated: true)
     }
 
-    @objc private func hideNotes() {
-        panelController?.collapse(animated: true)
+    @objc private func addFiles() {
+        panelController?.addFiles()
+    }
+
+    @objc private func clearShelf() {
+        panelController?.clearShelf()
+    }
+
+    @objc private func toggleKeepAwake() {
+        panelController?.toggleKeepAwake()
+    }
+
+    @objc private func useClickTrigger() {
+        panelController?.setTriggerMode(.click)
+    }
+
+    @objc private func useHoverTrigger() {
+        panelController?.setTriggerMode(.hover)
     }
 
     @objc private func quit() {

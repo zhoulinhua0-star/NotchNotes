@@ -1,6 +1,17 @@
 import AppKit
 import SwiftUI
 
+enum HoverActivationPolicy {
+    static let preferredWidth: CGFloat = 360
+
+    static func frame(around baseFrame: NSRect, within screenFrame: NSRect) -> NSRect {
+        let width = min(max(baseFrame.width, preferredWidth), screenFrame.width)
+        let proposedX = baseFrame.midX - width / 2
+        let x = min(max(proposedX, screenFrame.minX), screenFrame.maxX - width)
+        return NSRect(x: x, y: baseFrame.minY, width: width, height: baseFrame.height)
+    }
+}
+
 @MainActor
 final class NotchPanel: NSPanel {
     var onMouseEvent: ((NSEvent) -> Void)?
@@ -99,20 +110,17 @@ final class CompactFileDropHostingView<Content: View>: TransparentHitHostingView
 
 @MainActor
 final class NotchPanelController: NSObject {
-    private let store = NoteStore()
     private let settingsStore = AppSettingsStore()
-    private let imageStore = LocalImageStore()
+    private let keepAwakeController = KeepAwakeController()
     private let fileShelfStore = FileShelfStore()
     private let workspaceState = NotebookWorkspaceState()
     private let drawerState = DrawerState()
-    private let editorInteractionState = EditorInteractionState()
     private let hotPanel: NotchPanel
     private let drawerPanel: NotchPanel
-    private var hostingView: NSHostingView<NotebookView>?
+    private var hostingView: NSHostingView<ShelfOnlyView>?
     private var hotHostingView: CompactFileDropHostingView<CompactNotchView>?
     private var mousePollingTimer: Timer?
     private var globalMouseDownMonitor: Any?
-    private var globalMouseDragMonitor: Any?
     private var globalMouseUpMonitor: Any?
     private var isExpanded = false
     private var isRevealedForFileDrag = false
@@ -161,7 +169,7 @@ final class NotchPanelController: NSObject {
         if isExpanded {
             finishFileDragRevealIfNeeded()
             if activate {
-                activateEditor()
+                activateShelf()
             }
             return
         }
@@ -169,7 +177,6 @@ final class NotchPanelController: NSObject {
         cancelCollapse()
         isExpanded = true
         isRevealedForFileDrag = false
-        rebuildContent(layout: layout)
         drawerPanel.setFrame(drawerFrame(for: layout), display: true)
         if activate {
             NSApp.activate(ignoringOtherApps: true)
@@ -183,16 +190,12 @@ final class NotchPanelController: NSObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.30) { [weak self] in
             guard let self else { return }
             guard self.isExpanded else { return }
-            self.activateEditor()
+            self.activateShelf()
         }
     }
 
     func collapse(animated: Bool) {
         guard isExpanded else { return }
-        if let range = editorInteractionState.currentSelectionRange() {
-            store.updateSelection(for: store.activeTabID, range: range)
-        }
-        store.flush(waitForDisk: false)
         isExpanded = false
         isRevealedForFileDrag = false
         workspaceState.isShelfDropTargeted = false
@@ -206,14 +209,6 @@ final class NotchPanelController: NSObject {
             self.hotPanel.setFrame(self.hotFrame(for: layout), display: true)
             self.hotPanel.orderFrontRegardless()
         }
-    }
-
-    func createNote() {
-        if let range = editorInteractionState.currentSelectionRange() {
-            store.updateSelection(for: store.activeTabID, range: range)
-        }
-        store.addTab()
-        expand(animated: true, activate: true)
     }
 
     private func configurePanel(_ panel: NotchPanel) {
@@ -233,15 +228,16 @@ final class NotchPanelController: NSObject {
     private func rebuildContent(layout: NotchLayout? = nil) {
         let layout = layout ?? currentLayout()
         let hotView = CompactNotchView(layout: layout)
-        let view = NotebookView(
-            store: store,
+        let view = ShelfOnlyView(
             settingsStore: settingsStore,
-            imageStore: imageStore,
+            keepAwakeController: keepAwakeController,
             fileShelfStore: fileShelfStore,
             workspaceState: workspaceState,
             drawerState: drawerState,
-            editorInteractionState: editorInteractionState,
-            layout: layout
+            layout: layout,
+            onAddFiles: { [weak self] in
+                self?.addFiles()
+            }
         )
 
         if let hotHostingView {
@@ -283,14 +279,14 @@ final class NotchPanelController: NSObject {
     }
 
     private func setDrawerExpanded(_ expanded: Bool, animated: Bool) {
-        guard animated else {
+        guard animated, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
             drawerState.isExpanded = expanded
             drawerState.revealProgress = expanded ? 1 : 0
             return
         }
 
         let animation: Animation = expanded
-            ? .spring(response: 0.28, dampingFraction: 0.86)
+            ? .spring(response: 0.21, dampingFraction: 0.88)
             : .easeOut(duration: 0.16)
 
         withAnimation(animation) {
@@ -301,7 +297,7 @@ final class NotchPanelController: NSObject {
 
     private func startMousePolling() {
         let timer = Timer(
-            timeInterval: 1.0 / 30.0,
+            timeInterval: 1.0 / 60.0,
             target: self,
             selector: #selector(mousePollingTick),
             userInfo: nil,
@@ -336,7 +332,6 @@ final class NotchPanelController: NSObject {
                 self.workspaceState.isDraggingShelfItem = false
                 self.resetFileDropState()
             }
-            self.editorInteractionState.handleMouseEvent(event, searchingIn: self.hostingView)
         }
 
         hotPanel.onEscape = { [weak self] in self?.collapse(animated: true) }
@@ -356,16 +351,9 @@ final class NotchPanelController: NSObject {
             }
         }
 
-        globalMouseDragMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseDragged]) { [weak self] _ in
-            Task { @MainActor in
-                self?.editorInteractionState.noteGlobalMouseDragged()
-            }
-        }
-
         globalMouseUpMonitor = NSEvent.addGlobalMonitorForEvents(matching: [.leftMouseUp]) { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
-                self.editorInteractionState.noteGlobalMouseUp()
                 self.workspaceState.isDraggingShelfItem = false
                 self.resetFileDropState()
                 self.finishFileDragRevealIfNeeded()
@@ -432,17 +420,12 @@ final class NotchPanelController: NSObject {
                 return
             }
 
-            if editorInteractionState.isDraggingSelection {
-                cancelCollapse()
-                return
-            }
-
             if workspaceState.isDraggingShelfItem {
                 cancelCollapse()
                 return
             }
 
-            if settingsStore.triggerMode == .click || editorInteractionState.hasKeyboardFocus() {
+            if settingsStore.triggerMode == .click {
                 cancelCollapse()
                 return
             }
@@ -455,9 +438,9 @@ final class NotchPanelController: NSObject {
             return
         }
 
-        if settingsStore.triggerMode == .hover,
-           NSEvent.pressedMouseButtons & 1 == 0,
-           activationFrame().contains(point) {
+        guard settingsStore.triggerMode == .hover else { return }
+        if NSEvent.pressedMouseButtons & 1 == 0,
+           hoverActivationFrame().contains(point) {
             expand(animated: true, activate: false)
         }
     }
@@ -470,14 +453,13 @@ final class NotchPanelController: NSObject {
             guard let self else { return }
             self.collapseTask = nil
             guard self.activeMenuTrackingCount == 0 else { return }
-            guard !self.editorInteractionState.isDraggingSelection else { return }
             guard !self.workspaceState.isDraggingShelfItem else { return }
             guard !self.isPointInExpandedStayRegion(NSEvent.mouseLocation) else { return }
             self.collapse(animated: true)
         }
 
         collapseTask = task
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.22, execute: task)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.28, execute: task)
     }
 
     private func cancelCollapse() {
@@ -486,19 +468,29 @@ final class NotchPanelController: NSObject {
     }
 
     private func activationFrame() -> NSRect {
-        let layout = currentLayout()
         let frame = hotPanel.frame
-        guard frame.width > 0, frame.height > 0 else {
-            return hotFrame(for: layout)
+        if frame.width > 0, frame.height > 0 {
+            return frame
         }
+        return hotFrame(for: currentLayout())
+    }
 
-        return frame
+    private func hoverActivationFrame() -> NSRect {
+        let screenFrame = targetScreen()?.frame
+            ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        return HoverActivationPolicy.frame(
+            around: activationFrame(),
+            within: screenFrame
+        )
     }
 
     private func isPointInExpandedStayRegion(_ point: NSPoint) -> Bool {
         let margin: CGFloat = 10
+        let triggerFrame = settingsStore.triggerMode == .hover
+            ? hoverActivationFrame()
+            : activationFrame()
         return drawerPanel.frame.insetBy(dx: -margin, dy: -margin).contains(point)
-            || activationFrame().contains(point)
+            || triggerFrame.contains(point)
     }
 
     private func receiveDroppedFiles(_ urls: [URL]) -> Bool {
@@ -523,7 +515,10 @@ final class NotchPanelController: NSObject {
     }
 
     private func handleFileDragTargeted(_ isTargeted: Bool) {
-        withAnimation(.spring(response: 0.30, dampingFraction: 0.84)) {
+        let animation: Animation? = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+            ? nil
+            : .spring(response: 0.30, dampingFraction: 0.84)
+        withAnimation(animation) {
             workspaceState.isShelfDropTargeted = isTargeted
         }
 
@@ -561,19 +556,55 @@ final class NotchPanelController: NSObject {
     }
 
     func flush() {
-        settingsStore.stopKeepingAwake()
-        store.flush(waitForDisk: true)
+        keepAwakeController.stop()
     }
 
-    private func activateEditor() {
+    private func activateShelf() {
         NSApp.activate(ignoringOtherApps: true)
         drawerPanel.makeKeyAndOrderFront(nil)
-        editorInteractionState.restoreSelection(
-            store.selectionRange(for: store.activeTabID),
-            searchingIn: hostingView
-        )
-        editorInteractionState.requestLayoutRefresh(searchingIn: hostingView)
-        editorInteractionState.requestFocus(searchingIn: hostingView)
+    }
+
+    var triggerMode: TriggerMode {
+        settingsStore.triggerMode
+    }
+
+    var isKeepingAwake: Bool {
+        keepAwakeController.isKeepingAwake
+    }
+
+    var hasShelfItems: Bool {
+        !fileShelfStore.items.isEmpty
+    }
+
+    func setTriggerMode(_ mode: TriggerMode) {
+        settingsStore.triggerMode = mode
+    }
+
+    func toggleKeepAwake() {
+        keepAwakeController.toggle()
+    }
+
+    func clearShelf() {
+        fileShelfStore.removeAll()
+    }
+
+    func addFiles() {
+        expand(animated: true, activate: true)
+
+        let panel = NSOpenPanel()
+        panel.title = "Add to File Shelf"
+        panel.prompt = "Add"
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = true
+        panel.resolvesAliases = true
+
+        panel.begin { [weak self] response in
+            guard response == .OK else { return }
+            Task { @MainActor in
+                _ = self?.fileShelfStore.add(panel.urls)
+            }
+        }
     }
 
     private func currentLayout() -> NotchLayout {

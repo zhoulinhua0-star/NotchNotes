@@ -10,21 +10,28 @@ let package = Package(
     products: [
         .executable(name: "NotchNotes", targets: ["NotchNotes"])
     ],
-    dependencies: [
-        .package(path: "Vendor/swift-markdown-engine")
-    ],
+    dependencies: [],
     targets: [
         .executableTarget(
             name: "NotchNotes",
-            dependencies: [
-                .product(name: "MarkdownEngine", package: "swift-markdown-engine")
-            ],
-            path: "Sources/NotchNotes"
+            dependencies: [],
+            path: "Sources/NotchNotes",
+            exclude: [
+                "EditorInteractionState.swift",
+                "LocalImageStore.swift",
+                "NotebookView.swift",
+                "NoteStore.swift",
+                "SystemSleepGuard.swift"
+            ]
         ),
         .testTarget(
             name: "NotchNotesTests",
             dependencies: ["NotchNotes"],
-            path: "Tests/NotchNotesTests"
+            path: "Tests/NotchNotesTests",
+            exclude: [
+                "NoteStoreTests.swift",
+                "SystemSleepGuardTests.swift"
+            ]
         )
     ]
 )

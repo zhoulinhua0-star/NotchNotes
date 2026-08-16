@@ -55,19 +55,11 @@ final class FileShelfStore: ObservableObject {
 
     @discardableResult
     func add(_ urls: [URL]) -> Int {
-        let existingPaths = Set(items.compactMap { resolvedURL(for: $0)?.standardizedFileURL.path })
-        var knownPaths = existingPaths
+        var knownPaths = Set<String>()
         var addedItems: [FileShelfItem] = []
 
         for url in urls where url.isFileURL {
             let standardizedURL = url.standardizedFileURL
-
-            if items.contains(where: {
-                resolvedURL(for: $0)?.standardizedFileURL.path == standardizedURL.path
-            }) {
-                continue
-            }
-
             guard items.count + addedItems.count < Self.maximumItemCount else { break }
             guard knownPaths.insert(standardizedURL.path).inserted else { continue }
             addedItems.append(FileShelfItem(url: standardizedURL))

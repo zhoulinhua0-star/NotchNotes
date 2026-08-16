@@ -11,28 +11,26 @@ struct FileShelfView: View {
     @State private var selectionRect: CGRect?
     @State private var selectionAtDragStart: Set<UUID> = []
     @FocusState private var isSelectionFocused: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private let selectionCoordinateSpace = "file-shelf-selection"
 
     var body: some View {
         ZStack(alignment: .topLeading) {
-            if !store.items.isEmpty {
+            if store.items.isEmpty {
+                emptyState
+                    .frame(
+                        width: size.width,
+                        height: size.height,
+                        alignment: .center
+                    )
+            } else {
                 shelfItems
                     .padding(.horizontal, 6)
             }
 
             marqueeEdgeZones
                 .allowsHitTesting(!workspaceState.isShelfDropTargeted)
-
-            if workspaceState.isShelfDropTargeted, store.items.isEmpty {
-                dropPrompt
-                    .frame(
-                        width: size.width,
-                        height: size.height,
-                        alignment: .center
-                    )
-                    .transition(.opacity.combined(with: .scale(scale: 0.96)))
-            }
 
             if let selectionRect,
                selectionRect.width >= 3,
@@ -51,6 +49,12 @@ struct FileShelfView: View {
         .frame(width: size.width, height: size.height)
         .coordinateSpace(name: selectionCoordinateSpace)
         .contentShape(Rectangle())
+        .simultaneousGesture(
+            SpatialTapGesture(coordinateSpace: .named(selectionCoordinateSpace))
+                .onEnded { value in
+                    clearSelectionIfNeeded(at: value.location)
+                }
+        )
         .background(
             RoundedRectangle(cornerRadius: 10, style: .continuous)
                 .fill(.white.opacity(workspaceState.isShelfDropTargeted ? 0.055 : 0.025))
@@ -67,8 +71,8 @@ struct FileShelfView: View {
             radius: 18,
             y: 8
         )
-        .animation(.spring(response: 0.30, dampingFraction: 0.84), value: workspaceState.isShelfDropTargeted)
-        .animation(.spring(response: 0.32, dampingFraction: 0.82), value: store.items)
+        .animation(reduceMotion ? nil : .spring(response: 0.30, dampingFraction: 0.84), value: workspaceState.isShelfDropTargeted)
+        .animation(reduceMotion ? nil : .spring(response: 0.32, dampingFraction: 0.82), value: store.items)
         .focusable()
         .focused($isSelectionFocused)
         .focusEffectDisabled()
@@ -94,25 +98,26 @@ struct FileShelfView: View {
         .onDisappear(perform: cancelMarqueeSelection)
         .contextMenu {
             Button(role: .destructive) {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+                withAnimation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.84)) {
                     store.removeAll()
                 }
             } label: {
-                Label("Remove All Shelf Items", systemImage: "xmark.circle")
+                Label("Clear Shelf", systemImage: "trash")
             }
             .disabled(store.items.isEmpty)
         }
     }
 
-    private var dropPrompt: some View {
-        HStack(spacing: 7) {
+    private var emptyState: some View {
+        VStack(spacing: 4) {
             Image(systemName: "tray.and.arrow.down")
-                .font(.system(size: 9, weight: .semibold))
+                .font(.system(size: 15, weight: .medium))
 
-            Text("Release to add")
+            Text(workspaceState.isShelfDropTargeted ? "Release to add" : "Drop files or folders here")
                 .font(.system(size: 10, weight: .semibold))
         }
-        .foregroundStyle(Color.white.opacity(0.58))
+        .foregroundStyle(Color.white.opacity(workspaceState.isShelfDropTargeted ? 0.72 : 0.40))
+        .transition(.opacity.combined(with: .scale(scale: 0.97)))
     }
 
     private var shelfItems: some View {
@@ -244,6 +249,13 @@ struct FileShelfView: View {
         selectedItemIDs = []
     }
 
+    private func clearSelectionIfNeeded(at location: CGPoint) {
+        guard !itemFrames.values.contains(where: { $0.contains(location) }) else { return }
+        cancelMarqueeSelection()
+        selectedItemIDs = []
+        isSelectionFocused = false
+    }
+
     private func cancelMarqueeSelection() {
         selectionRect = nil
         selectionAtDragStart = []
@@ -266,6 +278,7 @@ private struct FileShelfChip: View {
     let onSelect: (NSEvent.ModifierFlags) -> Void
     let onDeleteSelected: () -> Void
     @State private var isHovering = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         draggableChip
@@ -344,9 +357,9 @@ private struct FileShelfChip: View {
             .buttonStyle(ShelfRemoveButtonStyle())
             .help("Remove from shelf (file stays on disk)")
             .offset(x: 1, y: -1)
-            .opacity(isHovering ? 1 : 0)
-            .scaleEffect(isHovering ? 1 : 0.86)
-            .allowsHitTesting(isHovering)
+            .opacity(isHovering || isSelected ? 1 : 0)
+            .scaleEffect(isHovering || isSelected ? 1 : 0.86)
+            .allowsHitTesting(isHovering || isSelected)
         }
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)
@@ -361,14 +374,24 @@ private struct FileShelfChip: View {
                 .stroke(.white.opacity(isSelected ? 0.20 : 0), lineWidth: 1)
         }
         .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .animation(.easeOut(duration: 0.13), value: isHovering)
-        .animation(.easeOut(duration: 0.12), value: isSelected)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.13), value: isHovering)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isSelected)
         .help(
             isAvailable
                 ? "\(displayName) · \(fileKind)"
                 : "\(displayName) is unavailable"
         )
         .accessibilityLabel(displayName)
+        .accessibilityHint(isAvailable ? "Double-click to open. Drag to move into another app." : "File is unavailable.")
+        .accessibilityAction(named: "Open") {
+            open()
+        }
+        .accessibilityAction(named: "Show in Finder") {
+            revealInFinder()
+        }
+        .accessibilityAction(named: "Remove from shelf") {
+            removeFromShelf()
+        }
     }
 
     private var url: URL? {
@@ -418,7 +441,7 @@ private struct FileShelfChip: View {
     }
 
     private func removeFromShelf() {
-        withAnimation(.spring(response: 0.28, dampingFraction: 0.84)) {
+        withAnimation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.84)) {
             store.remove(item)
         }
     }
@@ -452,6 +475,14 @@ private struct FileDragSourceView: NSViewRepresentable {
         nsView.onReveal = onReveal
         nsView.onRemove = onRemove
     }
+}
+
+enum FileShelfHoverTrackingPolicy {
+    static let options: NSTrackingArea.Options = [
+        .mouseEnteredAndExited,
+        .activeAlways,
+        .inVisibleRect
+    ]
 }
 
 @MainActor
@@ -497,7 +528,7 @@ private final class FileDragSourceNSView: NSView, NSDraggingSource {
 
         let trackingArea = NSTrackingArea(
             rect: .zero,
-            options: [.mouseEnteredAndExited, .activeInActiveApp, .inVisibleRect],
+            options: FileShelfHoverTrackingPolicy.options,
             owner: self,
             userInfo: nil
         )
