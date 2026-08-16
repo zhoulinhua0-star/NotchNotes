@@ -66,7 +66,7 @@ Markdown 笔记界面目前不参与构建。旧版本保存在本机的笔记�
 
 这个模式不需要管理员权限，也不修改系统睡眠设置；它**不支持合盖保持运行**，也不能覆盖 macOS 或硬件强制执行的睡眠行为。
 
-## 下载与首次启动
+## 下载、安装与日常启动
 
 1. [下载最新版 `NotchNotes.zip`](https://github.com/zhoulinhua0-star/NotchNotes/releases/latest/download/NotchNotes.zip)。
 2. 解压后将 `NotchNotes.app` 拖入“应用程序”。
@@ -74,6 +74,16 @@ Markdown 笔记界面目前不参与构建。旧版本保存在本机的笔记�
 4. 如果 macOS 仍然拦截，请前往“系统设置 → 隐私与安全性”，点击“仍要打开”。
 
 公开构建使用临时签名，尚未经过 Apple 公证，因此首次启动可能出现安全提示。正式免提示分发需要 Developer ID Application 证书和 Apple 公证。
+
+安装到“应用程序”后，不再需要通过构建目录启动。日常可以在 Spotlight 或 Finder 的“应用程序”中打开；Terminal 用户也可以使用：
+
+```bash
+open -a NotchNotes
+```
+
+NotchNotes 是菜单栏应用，运行后通常不会显示 Dock 图标。若希望登录 Mac 后自动运行，请前往“系统设置 → 通用 → 登录项与扩展 → 登录时打开”，点击 `+` 并选择 `NotchNotes.app`。
+
+目前应用不包含自动更新器。安装新版本前先退出 NotchNotes，再将新版拖入“应用程序”并选择“替换”；正常替换不会清除 Shelf 内容或 Click / Hover 设置。
 
 ## 本地构建
 
@@ -84,6 +94,12 @@ git clone git@github.com:zhoulinhua0-star/NotchNotes.git
 cd NotchNotes
 swift test
 ./Scripts/package-app.sh
+open dist.noindex
+```
+
+最后一条命令会在 Finder 中打开构建结果。将 `NotchNotes.app` 拖入“应用程序”即可长期使用；如果只是临时测试，也可以直接运行：
+
+```bash
 open dist.noindex/NotchNotes.app
 ```
 
