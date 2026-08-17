@@ -67,6 +67,7 @@ final class KeepAwakeController: ObservableObject {
         }
 
         isStopping = true
+        isKeepingAwake = false
         if process.isRunning {
             process.terminate()
         } else {

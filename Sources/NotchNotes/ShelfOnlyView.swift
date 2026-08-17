@@ -258,8 +258,8 @@ private struct KeepAwakeButton: View {
 
     private var helpText: String {
         controller.isKeepingAwake
-            ? "Stop keeping Mac awake"
-            : "Keep display and Mac awake (caffeinate -di)"
+            ? "Stop keeping Mac awake (turns off automatically when Mac sleeps)"
+            : "Keep display and Mac awake until it sleeps"
     }
 }
 

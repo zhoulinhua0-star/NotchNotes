@@ -12,6 +12,48 @@ enum HoverActivationPolicy {
     }
 }
 
+struct HoverActivationGate {
+    static let resumeCooldown: TimeInterval = 0.45
+
+    private(set) var isSuppressed = false
+    private var resumeDeadline: TimeInterval?
+    private var requiresPointerExit = false
+
+    mutating func suppress() {
+        isSuppressed = true
+        resumeDeadline = nil
+        requiresPointerExit = false
+    }
+
+    mutating func resume(at timestamp: TimeInterval, pointerIsInside: Bool) {
+        guard isSuppressed else { return }
+        isSuppressed = false
+        resumeDeadline = timestamp + Self.resumeCooldown
+        requiresPointerExit = pointerIsInside
+    }
+
+    mutating func shouldActivate(at timestamp: TimeInterval, pointerIsInside: Bool) -> Bool {
+        guard !isSuppressed else { return false }
+
+        if let resumeDeadline, timestamp < resumeDeadline {
+            if pointerIsInside {
+                requiresPointerExit = true
+            }
+            return false
+        }
+        resumeDeadline = nil
+
+        if requiresPointerExit {
+            if !pointerIsInside {
+                requiresPointerExit = false
+            }
+            return false
+        }
+
+        return pointerIsInside
+    }
+}
+
 @MainActor
 final class NotchPanel: NSPanel {
     var onMouseEvent: ((NSEvent) -> Void)?
@@ -126,6 +168,7 @@ final class NotchPanelController: NSObject {
     private var isRevealedForFileDrag = false
     private var activeMenuTrackingCount = 0
     private var collapseTask: DispatchWorkItem?
+    private var hoverActivationGate = HoverActivationGate()
 
     override init() {
         hotPanel = NotchPanel(
@@ -150,6 +193,8 @@ final class NotchPanelController: NSObject {
         observePanelMouseEvents()
         observeGlobalMouseEvents()
         observeMenuTracking()
+        observePanelOcclusion()
+        observePowerEvents()
     }
 
     func showDocked() {
@@ -218,7 +263,7 @@ final class NotchPanelController: NSObject {
         panel.hasShadow = false
         panel.hidesOnDeactivate = false
         panel.level = .statusBar
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary]
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .transient]
         panel.isMovable = false
         panel.isReleasedWhenClosed = false
         panel.animationBehavior = .none
@@ -382,6 +427,26 @@ final class NotchPanelController: NSObject {
         )
     }
 
+    private func observePanelOcclusion() {
+        for panel in [hotPanel, drawerPanel] {
+            NotificationCenter.default.addObserver(
+                self,
+                selector: #selector(panelOcclusionStateChanged),
+                name: NSWindow.didChangeOcclusionStateNotification,
+                object: panel
+            )
+        }
+    }
+
+    private func observePowerEvents() {
+        NSWorkspace.shared.notificationCenter.addObserver(
+            self,
+            selector: #selector(workspaceWillSleep),
+            name: NSWorkspace.willSleepNotification,
+            object: nil
+        )
+    }
+
     @objc private func screenParametersChanged(_ notification: Notification) {
         let layout = currentLayout()
         cancelCollapse()
@@ -405,8 +470,28 @@ final class NotchPanelController: NSObject {
         handleMouseLocation(NSEvent.mouseLocation)
     }
 
+    @objc private func panelOcclusionStateChanged(_ notification: Notification) {
+        guard let panel = notification.object as? NSWindow else { return }
+        let expectedPanel = isExpanded ? drawerPanel : hotPanel
+        guard panel === expectedPanel else { return }
+
+        if panel.isVisible, panel.occlusionState.contains(.visible) {
+            hoverActivationGate.resume(
+                at: ProcessInfo.processInfo.systemUptime,
+                pointerIsInside: hoverActivationFrame().contains(NSEvent.mouseLocation)
+            )
+        } else {
+            suppressHoverForWindowManagement()
+        }
+    }
+
+    @objc private func workspaceWillSleep(_ notification: Notification) {
+        keepAwakeController.stop()
+    }
+
     private func handleMouseLocation(_ point: NSPoint) {
         if !isExpanded,
+           !hoverActivationGate.isSuppressed,
            NSEvent.pressedMouseButtons & 1 == 1,
            activationFrame().contains(point),
            FileDropPasteboardReader.containsFileURLs(NSPasteboard(name: .drag)) {
@@ -439,10 +524,33 @@ final class NotchPanelController: NSObject {
         }
 
         guard settingsStore.triggerMode == .hover else { return }
-        if NSEvent.pressedMouseButtons & 1 == 0,
-           hoverActivationFrame().contains(point) {
+        let pointerIsInside = hoverActivationFrame().contains(point)
+        guard hoverActivationGate.shouldActivate(
+            at: ProcessInfo.processInfo.systemUptime,
+            pointerIsInside: pointerIsInside
+        ) else {
+            return
+        }
+        if NSEvent.pressedMouseButtons & 1 == 0 {
             expand(animated: true, activate: false)
         }
+    }
+
+    private func suppressHoverForWindowManagement() {
+        hoverActivationGate.suppress()
+        cancelCollapse()
+        guard isExpanded else { return }
+
+        let layout = currentLayout()
+        isExpanded = false
+        isRevealedForFileDrag = false
+        workspaceState.isShelfDropTargeted = false
+        workspaceState.isDraggingShelfItem = false
+        drawerState.isExpanded = false
+        drawerState.revealProgress = 0
+        drawerPanel.orderOut(nil)
+        hotPanel.setFrame(hotFrame(for: layout), display: true)
+        hotPanel.orderFrontRegardless()
     }
 
     private func scheduleCollapse() {
