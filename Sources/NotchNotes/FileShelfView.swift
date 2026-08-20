@@ -295,6 +295,9 @@ private struct FileShelfChip: View {
                     FileDragSourceView(
                         url: url,
                         displayName: displayName,
+                        onShouldBeginDrag: {
+                            store.canBeginDrag(item)
+                        },
                         onDragBegan: {
                             workspaceState.isDraggingShelfItem = true
                             workspaceState.isShelfDropTargeted = false
@@ -379,7 +382,7 @@ private struct FileShelfChip: View {
         .help(
             isAvailable
                 ? "\(displayName) · \(fileKind)"
-                : "\(displayName) is unavailable"
+                : "\(displayName) can’t be found at its original location"
         )
         .accessibilityLabel(displayName)
         .accessibilityHint(isAvailable ? "Double-click to open. Drag to move into another app." : "File is unavailable.")
@@ -450,6 +453,7 @@ private struct FileShelfChip: View {
 private struct FileDragSourceView: NSViewRepresentable {
     let url: URL
     let displayName: String
+    let onShouldBeginDrag: () -> Bool
     let onDragBegan: () -> Void
     let onDragEnded: () -> Void
     let onHoverChange: (Bool) -> Void
@@ -466,6 +470,7 @@ private struct FileDragSourceView: NSViewRepresentable {
     func updateNSView(_ nsView: FileDragSourceNSView, context: Context) {
         nsView.url = url
         nsView.displayName = displayName
+        nsView.onShouldBeginDrag = onShouldBeginDrag
         nsView.onDragBegan = onDragBegan
         nsView.onDragEnded = onDragEnded
         nsView.onHoverChange = onHoverChange
@@ -489,6 +494,7 @@ enum FileShelfHoverTrackingPolicy {
 private final class FileDragSourceNSView: NSView, NSDraggingSource {
     var url: URL?
     var displayName = ""
+    var onShouldBeginDrag: (() -> Bool)?
     var onDragBegan: (() -> Void)?
     var onDragEnded: (() -> Void)?
     var onHoverChange: ((Bool) -> Void)?
@@ -568,7 +574,8 @@ private final class FileDragSourceNSView: NSView, NSDraggingSource {
         guard !didStartDrag,
               let mouseDownLocation,
               FileDragGesturePolicy.shouldBegin(from: mouseDownLocation, to: location),
-              let url else {
+              let url,
+              onShouldBeginDrag?() == true else {
             return
         }
         didStartDrag = true

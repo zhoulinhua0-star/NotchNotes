@@ -51,6 +51,61 @@ final class FileShelfStoreTests: XCTestCase {
         XCTAssertNil(store.items.first?.bookmarkData)
     }
 
+    func testRefreshAvailabilityMarksMovedFileUnavailable() async throws {
+        let suiteName = "FileShelfStoreTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let temporaryDirectory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NotchNotesTests-\(UUID().uuidString)", isDirectory: true)
+        let originalURL = temporaryDirectory.appendingPathComponent("sample.txt")
+        let movedURL = temporaryDirectory.appendingPathComponent("moved.txt")
+
+        try FileManager.default.createDirectory(
+            at: temporaryDirectory,
+            withIntermediateDirectories: true
+        )
+        try Data("temporary shelf item".utf8).write(to: originalURL)
+
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: temporaryDirectory)
+        }
+
+        let store = FileShelfStore(defaults: defaults)
+        XCTAssertEqual(store.add([originalURL]), 1)
+        let item = try XCTUnwrap(store.items.first)
+
+        await store.refreshAvailability()
+        XCTAssertTrue(store.isAvailable(item))
+
+        try FileManager.default.moveItem(at: originalURL, to: movedURL)
+        await store.refreshAvailability()
+
+        XCTAssertFalse(store.isAvailable(item))
+    }
+
+    func testDragRecheckStopsMissingFileAndUpdatesAvailability() throws {
+        let suiteName = "FileShelfStoreTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("NotchNotesTests-\(UUID().uuidString).txt")
+        try Data("temporary shelf item".utf8).write(to: fileURL)
+
+        defer {
+            defaults.removePersistentDomain(forName: suiteName)
+            try? FileManager.default.removeItem(at: fileURL)
+        }
+
+        let store = FileShelfStore(defaults: defaults)
+        XCTAssertEqual(store.add([fileURL]), 1)
+        let item = try XCTUnwrap(store.items.first)
+        XCTAssertTrue(store.canBeginDrag(item))
+
+        try FileManager.default.removeItem(at: fileURL)
+
+        XCTAssertFalse(store.canBeginDrag(item))
+        XCTAssertFalse(store.isAvailable(item))
+    }
+
     func testShelfRemovesSelectedItemsAsOneOperation() throws {
         let suiteName = "FileShelfStoreTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))

@@ -98,6 +98,33 @@ final class FileShelfStore: ObservableObject {
         availabilityByID[item.id] ?? true
     }
 
+    func canBeginDrag(_ item: FileShelfItem) -> Bool {
+        guard items.contains(where: { $0.id == item.id }),
+              let url = resolvedURL(for: item) else {
+            return false
+        }
+
+        let isAvailable = FileManager.default.fileExists(atPath: url.path)
+        availabilityByID[item.id] = isAvailable
+        return isAvailable
+    }
+
+    func refreshAvailability() async {
+        let pathsByID = Dictionary(
+            uniqueKeysWithValues: items.map { ($0.id, $0.fallbackPath) }
+        )
+        guard !pathsByID.isEmpty else { return }
+
+        let availability = await Task.detached(priority: .utility) {
+            pathsByID.mapValues { FileManager.default.fileExists(atPath: $0) }
+        }.value
+        let currentIDs = Set(items.map(\.id))
+
+        for (id, isAvailable) in availability where currentIDs.contains(id) {
+            availabilityByID[id] = isAvailable
+        }
+    }
+
     func refreshAvailability(_ item: FileShelfItem) async {
         let path = item.fallbackPath
         let isAvailable = await Task.detached(priority: .utility) {

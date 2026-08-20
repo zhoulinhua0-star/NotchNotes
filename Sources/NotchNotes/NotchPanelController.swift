@@ -194,6 +194,7 @@ final class NotchPanelController: NSObject {
         observeGlobalMouseEvents()
         observeMenuTracking()
         observePanelOcclusion()
+        observeApplicationActivation()
         observePowerEvents()
     }
 
@@ -211,6 +212,7 @@ final class NotchPanelController: NSObject {
     }
 
     func expand(animated: Bool, activate: Bool = true) {
+        refreshFileAvailability()
         if isExpanded {
             finishFileDragRevealIfNeeded()
             if activate {
@@ -447,6 +449,15 @@ final class NotchPanelController: NSObject {
         )
     }
 
+    private func observeApplicationActivation() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(applicationDidBecomeActive),
+            name: NSApplication.didBecomeActiveNotification,
+            object: nil
+        )
+    }
+
     @objc private func screenParametersChanged(_ notification: Notification) {
         let layout = currentLayout()
         cancelCollapse()
@@ -487,6 +498,10 @@ final class NotchPanelController: NSObject {
 
     @objc private func workspaceWillSleep(_ notification: Notification) {
         keepAwakeController.stop()
+    }
+
+    @objc private func applicationDidBecomeActive(_ notification: Notification) {
+        refreshFileAvailability()
     }
 
     private func handleMouseLocation(_ point: NSPoint) {
@@ -646,6 +661,7 @@ final class NotchPanelController: NSObject {
     private func revealDrawerForFileDrag() {
         guard !isExpanded else { return }
 
+        refreshFileAvailability()
         let layout = currentLayout()
         cancelCollapse()
         isExpanded = true
@@ -665,6 +681,13 @@ final class NotchPanelController: NSObject {
 
     func flush() {
         keepAwakeController.stop()
+    }
+
+    private func refreshFileAvailability() {
+        Task { [weak self] in
+            guard let self else { return }
+            await fileShelfStore.refreshAvailability()
+        }
     }
 
     private func activateShelf() {

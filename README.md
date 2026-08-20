@@ -38,6 +38,7 @@
 - Drag files or folders to the top of the screen, or add them with `Add Files` or <kbd>⌘</kbd> + <kbd>O</kbd>.
 - Select one or multiple items, marquee-select, and drag items out of the Shelf; double-click to open or right-click to reveal in Finder.
 - The Shelf stores path references only. It never copies, moves, or deletes the originals, and clearing the Shelf does not delete anything from disk.
+- If a referenced file or folder is moved, trashed, or deleted, the Shelf dims it and shows a warning when it next opens, becomes active, or you try to drag it. It does not search for the item’s new location.
 - Shelf history stays on your Mac and holds up to 100 items.
 
 ### Click / Hover — available when you need it
