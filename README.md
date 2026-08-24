@@ -31,7 +31,7 @@
 
 | File staging | Mission Control friendly | Bounded Keep Awake |
 | --- | --- | --- |
-| Stores path references only; original files stay in place | Hides the Shelf and pauses Hover while you manage windows and Spaces | Prevents idle sleep, then turns off when you close the lid or choose Sleep |
+| Stores path references only; original files stay in place | Hides the Shelf and pauses Hover while you manage windows and Spaces | Prevents idle sleep, fills the menu bar icon while active, then turns off when you close the lid or choose Sleep |
 
 ### File Shelf
 
@@ -60,6 +60,8 @@ Click the coffee cup in the top-right corner of the Shelf, or enable `Keep Mac A
 ```bash
 /usr/bin/caffeinate -di -w <NotchNotes PID>
 ```
+
+The menu bar tray icon stays outlined while Keep Awake is off and fills while it is active, so you can confirm the state without opening the menu. It returns to the outlined icon as soon as Keep Awake stops, including if the background `caffeinate` process exits unexpectedly.
 
 | Action | Keep Awake state |
 | --- | --- |

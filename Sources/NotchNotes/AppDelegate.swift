@@ -1,14 +1,17 @@
 import AppKit
+import Combine
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var panelController: NotchPanelController?
     private var statusItem: NSStatusItem?
+    private var keepAwakeStateObservation: AnyCancellable?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         panelController = NotchPanelController()
         panelController?.showDocked()
         buildStatusItem()
+        observeKeepAwakeState()
         buildMainMenu()
     }
 
@@ -22,13 +25,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     private func buildStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.image = NSImage(
-            systemSymbolName: "tray.full",
-            accessibilityDescription: "NotchNotes File Shelf"
-        )
         item.button?.imagePosition = .imageOnly
         item.menu = makeAppMenu()
         statusItem = item
+        updateStatusItemIcon(isKeepingAwake: panelController?.isKeepingAwake == true)
+    }
+
+    private func observeKeepAwakeState() {
+        keepAwakeStateObservation = panelController?.keepAwakeStatePublisher
+            .removeDuplicates()
+            .sink { [weak self] isKeepingAwake in
+                self?.updateStatusItemIcon(isKeepingAwake: isKeepingAwake)
+            }
+    }
+
+    private func updateStatusItemIcon(isKeepingAwake: Bool) {
+        statusItem?.button?.image = NSImage(
+            systemSymbolName: isKeepingAwake ? "tray.full.fill" : "tray.full",
+            accessibilityDescription: isKeepingAwake
+                ? "NotchNotes File Shelf, Keep Awake On"
+                : "NotchNotes File Shelf, Keep Awake Off"
+        )
     }
 
     private func buildMainMenu() {

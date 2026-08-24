@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import SwiftUI
 
 enum HoverActivationPolicy {
@@ -701,6 +702,10 @@ final class NotchPanelController: NSObject {
 
     var isKeepingAwake: Bool {
         keepAwakeController.isKeepingAwake
+    }
+
+    var keepAwakeStatePublisher: Published<Bool>.Publisher {
+        keepAwakeController.$isKeepingAwake
     }
 
     var hasShelfItems: Bool {
