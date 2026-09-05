@@ -286,11 +286,10 @@ private struct ShelfToolbarButtonStyle: ButtonStyle {
 }
 
 struct CompactNotchView: View {
-    let layout: NotchLayout
-
+    // Sized by the hosting view so it follows the panel as the drop-target
+    // overhang appears and disappears.
     var body: some View {
         Color.clear
-            .frame(width: layout.compactSize.width, height: layout.compactSize.height + 28)
             .contentShape(Rectangle())
             .accessibilityLabel("Open file shelf")
     }

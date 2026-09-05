@@ -1,12 +1,5 @@
 <p align="center">
-  <img src="./docs/assets/app-icon.png" width="96" alt="NotchNotes app icon">
-</p>
-
-<h1 align="center">NotchNotes</h1>
-
-<p align="center">
-  <strong>Turn the top of your Mac screen into an always-ready file shelf.</strong><br>
-  Stage files and drag them across apps; stay out of the way in Mission Control, and stop Keep Awake automatically when macOS sleeps.
+  <img src="./assets/readme/hero.svg" width="100%" alt="NotchNotes — a macOS menu bar utility. Stage files at the top edge of your screen, then drag them out into any app.">
 </p>
 
 <p align="center">
@@ -25,6 +18,10 @@
   <a href="#get-notchnotes"><strong>Download and install</strong></a>
   ·
   <a href="https://github.com/oil-oil/NotchNotes">Upstream project</a>
+</p>
+
+<p align="center">
+  <img src="./assets/readme/section-features.svg" width="100%" alt="01 — Feature overview: file shelf, click and hover, keep awake">
 </p>
 
 ## Feature overview
@@ -50,6 +47,12 @@ Choose `Open Shelf With` from the gear in the top-right corner of the Shelf or f
 
 On first launch, NotchNotes chooses a default based on the display type. Your selection is then stored locally. Hover behavior stays consistent across regular desktops, different Spaces, and full-screen apps.
 
+The trigger area stays inside the menu bar, so it never covers the window below. Clicks that land just under the menu bar — a browser tab’s close button, a toolbar control — still reach the app you are using. The area reaches further down only while you are dragging files, which gives Finder a drop target the pointer can actually enter.
+
+<p align="center">
+  <img src="./assets/readme/trigger-zone.svg" width="100%" alt="At rest the trigger area sits inside the menu bar, so a click on the browser tab strip below reaches the browser. While a file drag is in flight the drop target extends below the menu bar so Finder can enter it.">
+</p>
+
 > [!TIP]
 > When you enter Mission Control with a three-finger swipe, <kbd>F3</kbd>, or another system action, the Shelf hides automatically and Hover pauses. Closing or switching Spaces near the top of the screen will not open the Shelf. After leaving Mission Control, move the pointer away from the top area and back again after a short cooldown. This requires no Accessibility permission and does not monitor or intercept trackpad gestures.
 
@@ -72,6 +75,10 @@ The menu bar tray icon stays outlined while Keep Awake is off and fills while it
 
 > [!NOTE]
 > Keep Awake requires no administrator privileges and does not modify system sleep settings. Automatic shutdown depends on the Mac actually entering system sleep. If you use macOS closed-display mode with power and an external display connected, the Mac may continue running; turn off Keep Awake manually and keep the device well ventilated.
+
+<p align="center">
+  <img src="./assets/readme/section-install.svg" width="100%" alt="02 — Get NotchNotes: install from releases, or build locally">
+</p>
 
 ## Get NotchNotes
 
@@ -139,9 +146,13 @@ The upstream Markdown notes interface is not currently included in this fork’s
 
 After GitHub Actions is enabled, pushes to `main` or manual runs of [`release.yml`](https://github.com/zhoulinhua0-star/NotchNotes/actions/workflows/release.yml) run the tests, build the universal app, and create or update the `latest` release. Pushing a `v*` tag also creates a versioned snapshot. Existing releases are not overwritten if tests or builds fail.
 
+<p align="center">
+  <img src="./assets/readme/section-internals.svg" width="100%" alt="03 — Technical implementation: Swift 6, AppKit, SwiftUI">
+</p>
+
 ## Technical implementation
 
-- **Swift + AppKit**: Menu bar app, overlay window, screen positioning, drag and drop, and top-edge pointer activation; system window visibility keeps it isolated from Mission Control.
+- **Swift + AppKit**: Menu bar app, overlay window, screen positioning, drag and drop, and top-edge pointer activation; the activation area is confined to the menu bar band and grows below it only for the duration of a file drag, and system window visibility keeps it isolated from Mission Control.
 - **SwiftUI**: File Shelf, selection state, settings menu, and coffee-cup control.
 - **UserDefaults**: Stores Shelf path references and the selected trigger mode.
 - **`/usr/bin/caffeinate` + `NSWorkspace`**: Provides basic sleep prevention without administrator privileges and stops proactively when macOS sends a sleep notification.

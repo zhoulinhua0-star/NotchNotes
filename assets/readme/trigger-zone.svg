@@ -1,0 +1,111 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="420" viewBox="0 0 1200 420"
+     role="img" aria-labelledby="tzTitle tzDesc">
+  <title id="tzTitle">Where the NotchNotes trigger area lives</title>
+  <desc id="tzDesc">Two states of the top of the screen. At rest the trigger area sits inside the menu bar, so a click on the browser tab strip below reaches the browser. While a file drag is in flight the drop target extends below the menu bar so Finder can enter it.</desc>
+
+  <rect width="1200" height="420" rx="26" fill="#0E1013"/>
+
+  <text x="48" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20" letter-spacing="2" fill="#878E97">AT REST</text>
+  <text x="616" y="72" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20" letter-spacing="2" fill="#E9A23B">WHILE DRAGGING FILES</text>
+
+  <g transform="translate(48 96)">
+    <clipPath id="clipA"><rect width="536" height="200" rx="14"/></clipPath>
+    <g clip-path="url(#clipA)">
+      <rect width="536" height="200" fill="#101317"/>
+      <rect width="536" height="40" fill="#1A1E23"/>
+      <rect y="39" width="536" height="1" fill="#23282E"/>
+      <g fill="#333A41">
+        <rect x="14" y="16" width="22" height="7" rx="3"/>
+        <rect x="44" y="16" width="30" height="7" rx="3"/>
+        <rect x="84" y="16" width="26" height="7" rx="3"/>
+        <rect x="470" y="16" width="26" height="7" rx="3"/>
+      </g>
+      <rect x="504" y="13" width="16" height="13" rx="3" fill="none" stroke="#E9A23B" stroke-width="1.5"/>
+
+      <rect y="40" width="536" height="52" fill="#16191E"/>
+      <g transform="translate(12 48)">
+        <rect width="150" height="44" rx="8" fill="#1F242A"/>
+        <text x="16" y="28" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#8A9099">Docs</text>
+        <path d="M124 17 l10 10 M134 17 l-10 10" stroke="#8A9099" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(170 48)">
+        <rect width="150" height="44" rx="8" fill="#1F242A"/>
+        <text x="16" y="28" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#8A9099">Mail</text>
+        <path d="M124 17 l10 10 M134 17 l-10 10" stroke="#8A9099" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(328 48)">
+        <rect width="150" height="44" rx="8" fill="#1F242A"/>
+        <text x="16" y="28" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#8A9099">Repo</text>
+        <path d="M124 17 l10 10 M134 17 l-10 10" stroke="#8A9099" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <rect y="92" width="536" height="108" fill="#0B0D10"/>
+      <g fill="#1A1E23">
+        <rect x="24" y="116" width="300" height="8" rx="4"/>
+        <rect x="24" y="136" width="420" height="8" rx="4"/>
+        <rect x="24" y="156" width="240" height="8" rx="4"/>
+      </g>
+      <rect x="208" y="4" width="120" height="32" rx="6" fill="#E9A23B" fill-opacity=".10"/>
+      <rect x="208" y="4" width="120" height="32" rx="6" fill="none" stroke="#E9A23B" stroke-width="2" stroke-dasharray="5 4"/>
+      <circle cx="299" cy="70" r="12" fill="none" stroke="#58CFE0" stroke-width="2"/>
+      <path d="M303 74 L303 102 L310 95 L315 107 L320 105 L315 93 L324 93 Z"
+            fill="#F3F4F6" stroke="#0B0D10" stroke-width="1.5" stroke-linejoin="round"/>
+    </g>
+    <rect width="536" height="200" rx="14" fill="none" stroke="#262B31" stroke-width="2"/>
+  </g>
+  <g transform="translate(616 96)">
+    <clipPath id="clipB"><rect width="536" height="200" rx="14"/></clipPath>
+    <g clip-path="url(#clipB)">
+      <rect width="536" height="200" fill="#101317"/>
+      <rect width="536" height="40" fill="#1A1E23"/>
+      <rect y="39" width="536" height="1" fill="#23282E"/>
+      <g fill="#333A41">
+        <rect x="14" y="16" width="22" height="7" rx="3"/>
+        <rect x="44" y="16" width="30" height="7" rx="3"/>
+        <rect x="84" y="16" width="26" height="7" rx="3"/>
+        <rect x="470" y="16" width="26" height="7" rx="3"/>
+      </g>
+      <rect x="504" y="13" width="16" height="13" rx="3" fill="none" stroke="#E9A23B" stroke-width="1.5"/>
+
+      <rect y="40" width="536" height="52" fill="#16191E"/>
+      <g transform="translate(12 48)">
+        <rect width="150" height="44" rx="8" fill="#1F242A"/>
+        <text x="16" y="28" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#8A9099">Docs</text>
+        <path d="M124 17 l10 10 M134 17 l-10 10" stroke="#8A9099" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(170 48)">
+        <rect width="150" height="44" rx="8" fill="#1F242A"/>
+        <text x="16" y="28" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#8A9099">Mail</text>
+        <path d="M124 17 l10 10 M134 17 l-10 10" stroke="#8A9099" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <g transform="translate(328 48)">
+        <rect width="150" height="44" rx="8" fill="#1F242A"/>
+        <text x="16" y="28" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#8A9099">Repo</text>
+        <path d="M124 17 l10 10 M134 17 l-10 10" stroke="#8A9099" stroke-width="2" stroke-linecap="round"/>
+      </g>
+      <rect y="92" width="536" height="108" fill="#0B0D10"/>
+      <g fill="#1A1E23">
+        <rect x="24" y="116" width="300" height="8" rx="4"/>
+        <rect x="24" y="136" width="420" height="8" rx="4"/>
+        <rect x="24" y="156" width="240" height="8" rx="4"/>
+      </g>
+      <rect x="208" y="4" width="120" height="100" rx="6" fill="#E9A23B" fill-opacity=".14"/>
+      <rect x="208" y="4" width="120" height="100" rx="6" fill="none" stroke="#E9A23B" stroke-width="2"/>
+      <g transform="translate(232 126)">
+        <rect width="108" height="44" rx="10" fill="#24282D" stroke="#E9A23B" stroke-width="2"/>
+        <text x="54" y="28" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#C6CBD1">brief.pdf</text>
+      </g>
+      <path d="M286 122 L286 110" stroke="#E9A23B" stroke-width="2" stroke-dasharray="4 4"/>
+      <path d="M286 104 l-6 10 h12 z" fill="#E9A23B"/>
+      <path d="M348 152 L348 180 L355 173 L360 185 L365 183 L360 171 L369 171 Z"
+            fill="#F3F4F6" stroke="#0B0D10" stroke-width="1.5" stroke-linejoin="round"/>
+    </g>
+    <rect width="536" height="200" rx="14" fill="none" stroke="#262B31" stroke-width="2"/>
+  </g>
+
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif" font-size="21">
+    <text x="48" y="338" fill="#F3F4F6">The trigger stays inside the menu bar.</text>
+    <text x="48" y="368" fill="#878E97">Your click reaches the browser tab below.</text>
+    <text x="616" y="338" fill="#F3F4F6">The drop target reaches below the menu bar,</text>
+    <text x="616" y="368" fill="#878E97">but only while a file drag is in flight.</text>
+  </g>
+</svg>

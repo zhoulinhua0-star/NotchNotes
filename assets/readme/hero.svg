@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="380" viewBox="0 0 1200 380"
+     role="img" aria-labelledby="heroTitle heroDesc">
+  <title id="heroTitle">NotchNotes</title>
+  <desc id="heroDesc">A macOS menu bar utility. The File Shelf drawer hangs from the top edge of the screen, holding staged files that can be dragged out into any app.</desc>
+
+  <defs>
+    <clipPath id="frame"><rect width="1200" height="380" rx="26"/></clipPath>
+    <linearGradient id="amberFade" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#E9A23B" stop-opacity=".26"/>
+      <stop offset="1" stop-color="#E9A23B" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="380" rx="26" fill="#0E1013"/>
+
+  <g clip-path="url(#frame)">
+    <!-- menu bar band across the top of the screen -->
+    <rect x="0" y="0" width="1200" height="34" fill="#15181C"/>
+    <rect x="0" y="33" width="1200" height="1" fill="#20252B"/>
+    <g fill="#333A41">
+      <rect x="26" y="13" width="30" height="8" rx="4"/>
+      <rect x="70" y="13" width="42" height="8" rx="4"/>
+      <rect x="126" y="13" width="36" height="8" rx="4"/>
+      <rect x="176" y="13" width="44" height="8" rx="4"/>
+      <rect x="566" y="13" width="34" height="8" rx="4"/>
+    </g>
+    <!-- the app's own menu bar icon -->
+    <rect x="618" y="10" width="20" height="15" rx="4" fill="none" stroke="#E9A23B" stroke-width="2"/>
+
+    <!-- File Shelf drawer, hanging from the screen edge -->
+    <g transform="translate(700 0)">
+      <path d="M0 0 H452 V222 Q452 244 430 244 H22 Q0 244 0 222 Z" fill="#1A1D21"/>
+      <rect x="0" y="3" width="452" height="26" fill="url(#amberFade)"/>
+      <rect x="0" y="0" width="452" height="3" fill="#E9A23B"/>
+      <path d="M0 0 H452 V222 Q452 244 430 244 H22 Q0 244 0 222 Z" fill="none" stroke="#2C3138" stroke-width="2"/>
+
+      <text x="24" y="48" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif"
+            font-size="24" font-weight="600" fill="#F3F4F6">File Shelf</text>
+      <!-- Keep Awake -->
+      <g transform="translate(292 30)" fill="none" stroke="#878E97" stroke-width="2" stroke-linecap="round">
+        <path d="M1 3 h20 v9 a9 9 0 0 1 -9 9 h-2 a9 9 0 0 1 -9 -9 z"/>
+        <path d="M21 6 h4 a5 5 0 0 1 0 10 h-4"/>
+      </g>
+      <text x="428" y="47" text-anchor="end"
+            font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+            font-size="18" fill="#878E97">6 items</text>
+      <rect x="24" y="68" width="404" height="1" fill="#262B31"/>
+
+      <g font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="18" fill="#C6CBD1" text-anchor="middle">
+        <g transform="translate(24 84)">
+          <rect width="124" height="64" rx="12" fill="#24282D"/>
+          <path d="M46 10 h24 l10 10 v20 a4 4 0 0 1 -4 4 h-30 a4 4 0 0 1 -4 -4 v-26 a4 4 0 0 1 4 -4 z" fill="#3A4148"/>
+          <path d="M70 10 l10 10 h-10 z" fill="#E9A23B"/>
+          <text x="62" y="58">brief.pdf</text>
+        </g>
+        <g transform="translate(164 84)">
+          <rect width="124" height="64" rx="12" fill="#24282D"/>
+          <path d="M46 10 h24 l10 10 v20 a4 4 0 0 1 -4 4 h-30 a4 4 0 0 1 -4 -4 v-26 a4 4 0 0 1 4 -4 z" fill="#3A4148"/>
+          <text x="62" y="58">logo.svg</text>
+        </g>
+        <g transform="translate(304 84)">
+          <rect width="124" height="64" rx="12" fill="#24282D"/>
+          <path d="M46 10 h24 l10 10 v20 a4 4 0 0 1 -4 4 h-30 a4 4 0 0 1 -4 -4 v-26 a4 4 0 0 1 4 -4 z" fill="#3A4148"/>
+          <text x="62" y="58">notes.md</text>
+        </g>
+        <g transform="translate(24 156)">
+          <rect width="124" height="64" rx="12" fill="#24282D"/>
+          <path d="M46 10 h24 l10 10 v20 a4 4 0 0 1 -4 4 h-30 a4 4 0 0 1 -4 -4 v-26 a4 4 0 0 1 4 -4 z" fill="#3A4148"/>
+          <text x="62" y="58">clip.mov</text>
+        </g>
+        <g transform="translate(164 156)">
+          <rect width="124" height="64" rx="12" fill="#24282D"/>
+          <path d="M46 10 h24 l10 10 v20 a4 4 0 0 1 -4 4 h-30 a4 4 0 0 1 -4 -4 v-26 a4 4 0 0 1 4 -4 z" fill="#3A4148"/>
+          <text x="62" y="58">data.csv</text>
+        </g>
+        <g transform="translate(304 156)">
+          <rect width="124" height="64" rx="12" fill="#24282D"/>
+          <path d="M46 10 h24 l10 10 v20 a4 4 0 0 1 -4 4 h-30 a4 4 0 0 1 -4 -4 v-26 a4 4 0 0 1 4 -4 z" fill="#3A4148"/>
+          <text x="62" y="58">shot.png</text>
+        </g>
+      </g>
+    </g>
+
+    <!-- one item being dragged out of the Shelf into another app -->
+    <path d="M926 252 C 926 286, 906 296, 884 306" fill="none" stroke="#E9A23B"
+          stroke-width="2" stroke-dasharray="5 6" opacity=".75"/>
+    <g transform="translate(806 296) rotate(-4)" opacity=".96">
+      <rect width="124" height="64" rx="12" fill="#24282D" stroke="#E9A23B" stroke-width="2"/>
+      <path d="M46 10 h24 l10 10 v20 a4 4 0 0 1 -4 4 h-30 a4 4 0 0 1 -4 -4 v-26 a4 4 0 0 1 4 -4 z" fill="#3A4148"/>
+      <path d="M70 10 l10 10 h-10 z" fill="#E9A23B"/>
+      <text x="62" y="58" text-anchor="middle"
+            font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+            font-size="18" fill="#C6CBD1">brief.pdf</text>
+    </g>
+    <path d="M932 336 L932 364 L939 357 L944 369 L949 367 L944 355 L953 355 Z"
+          fill="#F3F4F6" stroke="#0E1013" stroke-width="1.5" stroke-linejoin="round"/>
+
+    <!-- pointer arriving at the top edge -->
+    <path d="M676 6 L676 34 L683 27 L688 39 L693 37 L688 25 L697 25 Z"
+          fill="#F3F4F6" stroke="#0E1013" stroke-width="1.5" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(64 0)">
+    <text y="126" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+          font-size="19" letter-spacing="2.4" fill="#878E97">MACOS · MENU BAR UTILITY</text>
+    <text y="200" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif"
+          font-size="76" font-weight="700" letter-spacing="-1.5" fill="#F3F4F6">NotchNotes</text>
+    <rect y="222" width="56" height="3" fill="#E9A23B"/>
+    <text y="272" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif"
+          font-size="26" fill="#C6CBD1">Stage files at the top edge of your screen,</text>
+    <text y="306" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif"
+          font-size="26" fill="#C6CBD1">then drag them out into any app.</text>
+    <text y="342" font-family="ui-monospace, SFMono-Regular, Menlo, monospace"
+          font-size="19" fill="#6B7178">macOS 14+   ·   Swift 6   ·   Apple Silicon + Intel</text>
+  </g>
+</svg>

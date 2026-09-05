@@ -1,12 +1,5 @@
 <p align="center">
-  <img src="./docs/assets/app-icon.png" width="96" alt="NotchNotes 应用图标">
-</p>
-
-<h1 align="center">NotchNotes</h1>
-
-<p align="center">
-  <strong>把 Mac 屏幕顶部变成随手可用的文件暂存架。</strong><br>
-  暂存文件、跨应用拖放；Mission Control 中安静退场，系统睡眠时自动结束 Keep Awake。
+  <img src="./assets/readme/zh/hero.svg" width="100%" alt="NotchNotes — 一款 macOS 菜单栏工具。把文件暂存在屏幕顶部，随时拖到任何应用里。">
 </p>
 
 <p align="center">
@@ -25,6 +18,10 @@
   <a href="#获取-notchnotes"><strong>下载安装</strong></a>
   ·
   <a href="https://github.com/oil-oil/NotchNotes">上游项目</a>
+</p>
+
+<p align="center">
+  <img src="./assets/readme/zh/section-features.svg" width="100%" alt="01 — 功能概览：文件暂存、点击与悬停、防止休眠">
 </p>
 
 ## 功能概览
@@ -49,6 +46,12 @@
 
 首次运行时，NotchNotes 会根据屏幕类型选择默认方式；之后的选择保存在本机。普通桌面、不同 Space 和全屏应用中的 Hover 行为保持一致。
 
+触发区域始终位于菜单栏内，不会覆盖下方窗口。落在菜单栏正下方的点击——例如浏览器标签页的关闭按钮或工具栏控件——仍会传递给你正在使用的应用。只有在拖拽文件时，该区域才会向下延伸，让访达获得一个指针真正能进入的放置目标。
+
+<p align="center">
+  <img src="./assets/readme/zh/trigger-zone.svg" width="100%" alt="静止时触发区域位于菜单栏内，点击下方浏览器标签栏会直接传给浏览器；拖拽文件时放置目标才向下延伸，让访达能够进入。">
+</p>
+
 > [!TIP]
 > 三指上滑、按 <kbd>F3</kbd> 或用其他方式进入 Mission Control 时，Shelf 会自动隐藏并暂停 Hover。在顶部关闭或切换 Space 不会触发下拉；退出后经过短暂冷却，需把鼠标移出顶部区域再重新移入。整个过程不需要辅助功能权限，也不监听或截获触控板手势。
 
@@ -71,6 +74,10 @@ Keep Awake 关闭时，菜单栏的文件托盘图标保持轮廓样式；启用
 
 > [!NOTE]
 > Keep Awake 不需要管理员权限，也不修改系统睡眠设置。自动关闭以 Mac 真正进入系统睡眠为准：如果连接电源和外接显示器后使用 macOS 闭盖显示模式，Mac 可能继续运行，此时请手动关闭 Keep Awake，并保持设备通风。
+
+<p align="center">
+  <img src="./assets/readme/zh/section-install.svg" width="100%" alt="02 — 获取 NotchNotes：从 Releases 安装，或本地构建">
+</p>
 
 ## 获取 NotchNotes
 
@@ -138,9 +145,13 @@ open -a NotchNotes
 
 启用 GitHub Actions 后，推送到 `main` 或手动运行 [`release.yml`](https://github.com/zhoulinhua0-star/NotchNotes/actions/workflows/release.yml) 会先执行测试，再构建通用应用并创建或更新 `latest` Release。推送 `v*` 标签会另外生成对应的版本快照；测试或构建失败时，现有 Release 不会被覆盖。
 
+<p align="center">
+  <img src="./assets/readme/zh/section-internals.svg" width="100%" alt="03 — 技术实现：Swift 6、AppKit、SwiftUI">
+</p>
+
 ## 技术实现
 
-- **Swift + AppKit**：菜单栏应用、浮层窗口、屏幕定位、拖放与顶部指针触发；使用系统窗口可见性隔离 Mission Control。
+- **Swift + AppKit**：菜单栏应用、浮层窗口、屏幕定位、拖放与顶部指针触发；触发区域限制在菜单栏范围内，仅在文件拖拽期间向下扩展，并使用系统窗口可见性隔离 Mission Control。
 - **SwiftUI**：File Shelf、选择状态、设置菜单和咖啡杯控制。
 - **UserDefaults**：保存 Shelf 路径引用和触发模式。
 - **`/usr/bin/caffeinate` + `NSWorkspace`**：实现无需管理员权限的基础唤醒，并在系统睡眠通知到达时主动停止。

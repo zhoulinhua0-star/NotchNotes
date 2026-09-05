@@ -3,15 +3,26 @@ import XCTest
 @testable import NotchNotes
 
 final class HoverActivationPolicyTests: XCTestCase {
-    func testHoverFrameWidensWithoutMovingOffScreen() {
+    func testHoverFrameOnlyAddsASmallMarginToTheCompactPanel() {
         let screen = NSRect(x: 0, y: 0, width: 1_440, height: 900)
-        let compact = NSRect(x: 618, y: 838, width: 204, height: 62)
+        let compact = NSRect(x: 618, y: 862, width: 204, height: 38)
 
         let frame = HoverActivationPolicy.frame(around: compact, within: screen)
 
-        XCTAssertEqual(frame.width, 360)
+        XCTAssertEqual(frame.width, 204 + HoverActivationPolicy.horizontalMargin * 2)
         XCTAssertEqual(frame.midX, compact.midX)
         XCTAssertEqual(frame.height, compact.height)
+        XCTAssertEqual(frame.minY, compact.minY)
+        XCTAssertTrue(screen.contains(frame))
+    }
+
+    func testHoverFrameNeverExceedsTheScreenWidth() {
+        let screen = NSRect(x: 0, y: 0, width: 200, height: 900)
+        let compact = NSRect(x: 0, y: 862, width: 200, height: 38)
+
+        let frame = HoverActivationPolicy.frame(around: compact, within: screen)
+
+        XCTAssertEqual(frame.width, screen.width)
         XCTAssertTrue(screen.contains(frame))
     }
 

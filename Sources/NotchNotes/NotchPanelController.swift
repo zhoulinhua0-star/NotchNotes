@@ -3,10 +3,13 @@ import Combine
 import SwiftUI
 
 enum HoverActivationPolicy {
-    static let preferredWidth: CGFloat = 360
+    /// Slack on each side of the compact panel that still counts as a hover.
+    /// Kept small so the trigger stays within the notch band instead of
+    /// reaching out over the tab strip of whatever window sits below.
+    static let horizontalMargin: CGFloat = 12
 
     static func frame(around baseFrame: NSRect, within screenFrame: NSRect) -> NSRect {
-        let width = min(max(baseFrame.width, preferredWidth), screenFrame.width)
+        let width = min(baseFrame.width + horizontalMargin * 2, screenFrame.width)
         let proposedX = baseFrame.midX - width / 2
         let x = min(max(proposedX, screenFrame.minX), screenFrame.maxX - width)
         return NSRect(x: x, y: baseFrame.minY, width: width, height: baseFrame.height)
@@ -52,6 +55,45 @@ struct HoverActivationGate {
         }
 
         return pointerIsInside
+    }
+}
+
+/// Tracks whether a system file drag is currently in flight.
+///
+/// The drag pasteboard keeps its contents after a drag ends, so its type list
+/// alone cannot tell a live drag from the leftovers of the previous one. A real
+/// drag session writes to the pasteboard *after* the mouse goes down, so the
+/// change count observed while the button was last up acts as the baseline.
+struct SystemFileDragProbe {
+    private var idleChangeCount: Int?
+    private var evaluatedChangeCount: Int?
+    private(set) var isDragging = false
+
+    /// - Returns: `true` when `isDragging` changed.
+    mutating func update(
+        buttonIsDown: Bool,
+        changeCount: Int,
+        readFileURLs: () -> Bool
+    ) -> Bool {
+        let wasDragging = isDragging
+
+        guard buttonIsDown else {
+            idleChangeCount = changeCount
+            evaluatedChangeCount = nil
+            isDragging = false
+            return isDragging != wasDragging
+        }
+
+        guard let idleChangeCount, changeCount != idleChangeCount else {
+            isDragging = false
+            return isDragging != wasDragging
+        }
+
+        if evaluatedChangeCount != changeCount {
+            evaluatedChangeCount = changeCount
+            isDragging = readFileURLs()
+        }
+        return isDragging != wasDragging
     }
 }
 
@@ -170,6 +212,9 @@ final class NotchPanelController: NSObject {
     private var activeMenuTrackingCount = 0
     private var collapseTask: DispatchWorkItem?
     private var hoverActivationGate = HoverActivationGate()
+    private var fileDragProbe = SystemFileDragProbe()
+    private var isHotFrameExtended = false
+    private let dragPasteboard = NSPasteboard(name: .drag)
 
     override init() {
         hotPanel = NotchPanel(
@@ -275,7 +320,7 @@ final class NotchPanelController: NSObject {
 
     private func rebuildContent(layout: NotchLayout? = nil) {
         let layout = layout ?? currentLayout()
-        let hotView = CompactNotchView(layout: layout)
+        let hotView = CompactNotchView()
         let view = ShelfOnlyView(
             settingsStore: settingsStore,
             keepAwakeController: keepAwakeController,
@@ -468,6 +513,7 @@ final class NotchPanelController: NSObject {
     }
 
     @objc private func mousePollingTick(_ timer: Timer) {
+        updateSystemFileDragTracking()
         handleMouseLocation(NSEvent.mouseLocation)
     }
 
@@ -510,7 +556,7 @@ final class NotchPanelController: NSObject {
            !hoverActivationGate.isSuppressed,
            NSEvent.pressedMouseButtons & 1 == 1,
            activationFrame().contains(point),
-           FileDropPasteboardReader.containsFileURLs(NSPasteboard(name: .drag)) {
+           FileDropPasteboardReader.containsFileURLs(dragPasteboard) {
             handleFileDragTargeted(true)
             return
         }
@@ -550,6 +596,39 @@ final class NotchPanelController: NSObject {
         if NSEvent.pressedMouseButtons & 1 == 0 {
             expand(animated: true, activate: false)
         }
+    }
+
+    private func updateSystemFileDragTracking() {
+        let changed = fileDragProbe.update(
+            buttonIsDown: NSEvent.pressedMouseButtons & 1 == 1,
+            changeCount: dragPasteboard.changeCount,
+            readFileURLs: { [dragPasteboard] in
+                FileDropPasteboardReader.containsFileURLs(dragPasteboard)
+            }
+        )
+        guard changed else { return }
+        setHotFrameExtended(fileDragProbe.isDragging)
+    }
+
+    private func setHotFrameExtended(_ extended: Bool) {
+        guard isHotFrameExtended != extended else { return }
+        isHotFrameExtended = extended
+
+        guard !extended else {
+            applyHotFrame()
+            return
+        }
+
+        // Shrinking runs as the drag ends, so give AppKit a beat to finish its
+        // drop callbacks before the dragging destination changes size.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            guard let self, !self.isHotFrameExtended else { return }
+            self.applyHotFrame()
+        }
+    }
+
+    private func applyHotFrame() {
+        hotPanel.setFrame(hotFrame(for: currentLayout()), display: true)
     }
 
     private func suppressHoverForWindowManagement() {
@@ -754,15 +833,26 @@ final class NotchPanelController: NSObject {
     private func hotFrame(for layout: NotchLayout) -> NSRect {
         let screen = targetScreen()
         let screenFrame = screen?.frame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        // The physical notch itself is not a reliable pointer target: the cursor
-        // normally stops just below its lower edge. Keep the compact visual size
-        // unchanged, but extend the transparent native dragging destination far
-        // enough below the notch for Finder to actually enter it.
-        let dropTargetSize = NSSize(
+        let size = NSSize(
             width: layout.compactSize.width,
-            height: layout.compactSize.height + 28
+            height: hotPanelHeight(for: layout, screen: screen)
         )
-        return frame(for: dropTargetSize, topY: screenFrame.maxY + layout.compactTopOffset, in: screenFrame)
+        return frame(for: size, topY: screenFrame.maxY + layout.compactTopOffset, in: screenFrame)
+    }
+
+    /// The compact panel sits above the frontmost window, so every point it
+    /// covers is a click that window never sees — the top of a browser's tab
+    /// strip, for one. At rest it therefore stays inside the menu bar band,
+    /// where no app draws. The physical notch is not a reliable pointer target
+    /// either, so Finder needs a dragging destination that reaches well below
+    /// it, but only while a drag is actually in flight.
+    private func hotPanelHeight(for layout: NotchLayout, screen: NSScreen?) -> CGFloat {
+        guard !isHotFrameExtended else {
+            return layout.compactSize.height + NotchGeometry.fileDragOverhang
+        }
+
+        let reach = screen?.measuredNotchSize == .zero ? 0 : NotchGeometry.notchedRestingReach
+        return min(layout.compactSize.height, NotchGeometry.menuBarHeight(for: screen)) + reach
     }
 
     private func drawerFrame(for layout: NotchLayout) -> NSRect {

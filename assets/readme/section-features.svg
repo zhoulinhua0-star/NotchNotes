@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="140" viewBox="0 0 1200 140"
+     role="img" aria-labelledby="t-section-features d-section-features">
+  <title id="t-section-features">01 — Feature overview</title>
+  <desc id="d-section-features">Section heading: Feature overview.</desc>
+
+  <rect width="1200" height="140" rx="22" fill="#0E1013"/>
+
+  <!-- motif: a tab attached to the top edge, square above and rounded below -->
+  <path d="M64 0 H160 V30 Q160 44 146 44 H78 Q64 44 64 30 Z" fill="#E9A23B"/>
+  <text x="112" y="31" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="22"
+        font-weight="700" fill="#0E1013">01</text>
+
+  <text x="64" y="106" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif" font-size="40" font-weight="700"
+        letter-spacing="-0.4" fill="#F3F4F6">Feature overview</text>
+  <text x="1136" y="106" text-anchor="end" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="20"
+        fill="#878E97">file shelf · click &amp; hover · keep awake</text>
+</svg>

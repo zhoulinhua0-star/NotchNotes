@@ -43,6 +43,25 @@ extension NSScreen {
 
 @MainActor
 enum NotchGeometry {
+    /// How far the compact panel reaches below the notch while a system file
+    /// drag is in flight, so Finder can enter a destination the cursor can
+    /// actually reach. See `NotchPanelController.hotFrame(for:)`.
+    static let fileDragOverhang: CGFloat = 28
+
+    /// Extra reach below the menu bar kept at rest on notched displays, where
+    /// the cursor is hidden inside the cutout and needs a sliver of visible
+    /// target just under it. Displays without a notch need none.
+    static let notchedRestingReach: CGFloat = 6
+
+    /// Height of the band no app draws into. On notched displays the menu bar
+    /// is exactly as deep as the cutout.
+    static func menuBarHeight(for screen: NSScreen?) -> CGFloat {
+        if let top = screen?.safeAreaInsets.top, top > 0 {
+            return top
+        }
+        return NSStatusBar.system.thickness
+    }
+
     static func targetScreen() -> NSScreen? {
         NSScreen.screens.first(where: \.isBuiltInDisplay)
             ?? NSScreen.screens.first { $0.measuredNotchSize != .zero }
