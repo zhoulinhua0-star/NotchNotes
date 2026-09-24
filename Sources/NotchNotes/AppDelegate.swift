@@ -5,6 +5,8 @@ import Combine
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var panelController: NotchPanelController?
     private var statusItem: NSStatusItem?
+    private var statusItemIcon: StatusItemIcon?
+    private lazy var statusMenu = makeAppMenu(includesShelfActions: false)
     private var keepAwakeStateObservation: AnyCancellable?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -20,15 +22,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     func menuNeedsUpdate(_ menu: NSMenu) {
-        populateAppMenu(menu)
+        populateAppMenu(menu, includesShelfActions: menu !== statusMenu)
+    }
+
+    func menuDidClose(_ menu: NSMenu) {
+        // Detach so the next left click reaches handleStatusItemClick instead of reopening the menu.
+        if menu === statusMenu {
+            statusItem?.menu = nil
+        }
     }
 
     private func buildStatusItem() {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        item.button?.imagePosition = .imageOnly
-        item.menu = makeAppMenu()
+        if let button = item.button {
+            button.imagePosition = .imageOnly
+            button.toolTip = "Click to toggle Keep Mac Awake · Right-click for menu"
+            button.target = self
+            button.action = #selector(handleStatusItemClick(_:))
+            button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+            statusItemIcon = StatusItemIcon(button: button)
+        }
         statusItem = item
         updateStatusItemIcon(isKeepingAwake: panelController?.isKeepingAwake == true)
+    }
+
+    @objc private func handleStatusItemClick(_ sender: NSStatusBarButton) {
+        let event = NSApp.currentEvent
+        let wantsMenu = event?.type == .rightMouseUp
+            || event?.modifierFlags.contains(.control) == true
+        if wantsMenu {
+            statusItem?.menu = statusMenu
+            sender.performClick(nil)
+        } else {
+            toggleKeepAwake()
+        }
     }
 
     private func observeKeepAwakeState() {
@@ -40,51 +67,32 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func updateStatusItemIcon(isKeepingAwake: Bool) {
-        statusItem?.button?.image = NSImage(
-            systemSymbolName: isKeepingAwake ? "tray.full.fill" : "tray.full",
-            accessibilityDescription: isKeepingAwake
-                ? "NotchNotes File Shelf, Keep Awake On"
-                : "NotchNotes File Shelf, Keep Awake Off"
-        )
+        statusItemIcon?.show(isKeepingAwake: isKeepingAwake)
     }
 
     private func buildMainMenu() {
         let rootItem = NSMenuItem(title: "NotchNotes", action: nil, keyEquivalent: "")
-        rootItem.submenu = makeAppMenu()
+        rootItem.submenu = makeAppMenu(includesShelfActions: true)
 
         let mainMenu = NSMenu()
         mainMenu.addItem(rootItem)
         NSApp.mainMenu = mainMenu
     }
 
-    private func makeAppMenu() -> NSMenu {
+    private func makeAppMenu(includesShelfActions: Bool) -> NSMenu {
         let menu = NSMenu()
         menu.delegate = self
-        populateAppMenu(menu)
+        populateAppMenu(menu, includesShelfActions: includesShelfActions)
         return menu
     }
 
-    private func populateAppMenu(_ menu: NSMenu) {
+    private func populateAppMenu(_ menu: NSMenu, includesShelfActions: Bool) {
         menu.removeAllItems()
 
-        menu.addItem(menuItem(
-            title: "Show File Shelf",
-            action: #selector(showShelf)
-        ))
-        menu.addItem(menuItem(
-            title: "Add Files or Folders…",
-            action: #selector(addFiles),
-            keyEquivalent: "o"
-        ))
-
-        let clearItem = menuItem(
-            title: "Clear Shelf",
-            action: #selector(clearShelf)
-        )
-        clearItem.isEnabled = panelController?.hasShelfItems == true
-        menu.addItem(clearItem)
-
-        menu.addItem(.separator())
+        if includesShelfActions {
+            addShelfActions(to: menu)
+            menu.addItem(.separator())
+        }
 
         let keepAwakeItem = menuItem(
             title: "Keep Mac Awake",
@@ -112,6 +120,25 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             action: #selector(quit),
             keyEquivalent: "q"
         ))
+    }
+
+    private func addShelfActions(to menu: NSMenu) {
+        menu.addItem(menuItem(
+            title: "Show File Shelf",
+            action: #selector(showShelf)
+        ))
+        menu.addItem(menuItem(
+            title: "Add Files or Folders…",
+            action: #selector(addFiles),
+            keyEquivalent: "o"
+        ))
+
+        let clearItem = menuItem(
+            title: "Clear Shelf",
+            action: #selector(clearShelf)
+        )
+        clearItem.isEnabled = panelController?.hasShelfItems == true
+        menu.addItem(clearItem)
     }
 
     private func menuItem(
