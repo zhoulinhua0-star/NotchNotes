@@ -15,7 +15,14 @@ struct CaffeinateCommand: Equatable {
 
 @MainActor
 final class KeepAwakeController: ObservableObject {
-    @Published private(set) var isKeepingAwake = false
+    @Published private(set) var isKeepingAwake = false {
+        didSet {
+            guard isKeepingAwake != oldValue else { return }
+            startedAt = isKeepingAwake ? Date() : nil
+        }
+    }
+    /// When the current Keep Awake session began; nil while it is off.
+    @Published private(set) var startedAt: Date?
     @Published private(set) var errorMessage: String?
 
     private var process: Process?

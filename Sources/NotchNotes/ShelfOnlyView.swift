@@ -76,6 +76,13 @@ struct ShelfOnlyView: View {
         .padding(.top, layout.compactSize.height + 6)
         .padding(.horizontal, horizontalPadding)
         .padding(.bottom, 12)
+        .overlay(alignment: .top) {
+            KeepAwakeStrip(
+                controller: keepAwakeController,
+                drawerState: drawerState,
+                layout: layout
+            )
+        }
         .onDisappear {
             workspaceState.isShelfDropTargeted = false
             workspaceState.isDraggingShelfItem = false

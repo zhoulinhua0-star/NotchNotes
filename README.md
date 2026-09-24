@@ -28,7 +28,7 @@
 
 | File staging | Mission Control friendly | Bounded Keep Awake |
 | --- | --- | --- |
-| Stores path references only; original files stay in place | Hides the Shelf and pauses Hover while you manage windows and Spaces | Prevents idle sleep, fills the menu bar icon while active, then turns off when you close the lid or choose Sleep |
+| Stores path references only; original files stay in place | Hides the Shelf and pauses Hover while you manage windows and Spaces | One click on the menu bar icon prevents idle sleep; a timer beside the notch shows how long, and it turns off when you close the lid or choose Sleep |
 
 ### File Shelf
 
@@ -40,7 +40,7 @@
 
 ### Click / Hover — available when you need it
 
-Choose `Open Shelf With` from the gear in the top-right corner of the Shelf or from the menu bar icon:
+Choose `Open Shelf With` from the gear in the top-right corner of the Shelf, or right-click the menu bar icon:
 
 - **Hover**: Move the pointer to the top center of the screen to expand the Shelf. Best for Macs with a physical notch.
 - **Click**: Click the top center of the screen to expand the Shelf. Best for Macs without a physical notch or anyone who prefers an explicit action.
@@ -58,17 +58,21 @@ The trigger area stays inside the menu bar, so it never covers the window below.
 
 ### Keep Awake — stops when sleep begins
 
-Click the coffee cup in the top-right corner of the Shelf, or enable `Keep Mac Awake` from the menu bar. NotchNotes runs the following command in the background:
+Click the menu bar tray icon, or the coffee cup in the top-right corner of the Shelf. NotchNotes runs the following command in the background:
 
 ```bash
 /usr/bin/caffeinate -di -w <NotchNotes PID>
 ```
 
-The menu bar tray icon stays outlined while Keep Awake is off and fills while it is active, so you can confirm the state without opening the menu. It returns to the outlined icon as soon as Keep Awake stops, including if the background `caffeinate` process exits unexpectedly.
+- **Menu bar icon**: The tray icon is outlined while Keep Awake is off and filled while it is on. Each time the state changes, a coffee cup briefly takes its place: it bounces in when Keep Awake turns on and drops away when it turns off. The icon returns to the outline as soon as Keep Awake stops, including when the background `caffeinate` process exits unexpectedly.
+- **Timer beside the notch**: At the top of the Shelf, the band beside the notch lights one cell for every 10 minutes Keep Awake has been on and shows the running time, such as `1h 24m`. The cells ripple outward from the notch each time the Shelf opens.
+- **Right-click menu**: Right-click or Control-click the menu bar icon for `Keep Mac Awake`, `Open Shelf With`, and `Quit NotchNotes`. Add files from the Shelf itself with `Add Files` or <kbd>⌘</kbd> + <kbd>O</kbd>.
+
+With Reduce Motion turned on in System Settings, the icon and the timer change without animation.
 
 | Action | Keep Awake state |
 | --- | --- |
-| Click the coffee cup to enable | Prevents display sleep and idle system sleep |
+| Click the menu bar icon or coffee cup to enable | Prevents display sleep and idle system sleep |
 | Click again or quit NotchNotes | Stops immediately |
 | Close the lid or choose Sleep from the Apple menu | Stops before macOS enters system sleep |
 | Open the lid or wake the Mac | Remains off and does not resume automatically |
@@ -138,7 +142,7 @@ This fork is based on [oil-oil/NotchNotes](https://github.com/oil-oil/NotchNotes
 
 - A dedicated file shelf with cross-app drag and drop.
 - Switchable Click / Hover activation at the top of the screen, with Hover paused automatically in Mission Control.
-- Basic sleep prevention powered by `/usr/bin/caffeinate`, which stops before macOS enters system sleep.
+- Basic sleep prevention powered by `/usr/bin/caffeinate`, toggled with one click on the menu bar icon and timed in the Shelf, which stops before macOS enters system sleep.
 
 The upstream Markdown notes interface is not currently included in this fork’s build. Notes and embedded images stored locally by older versions are not deleted, but the current version does not load or display them.
 
@@ -152,7 +156,7 @@ After GitHub Actions is enabled, pushes to `main` or manual runs of [`release.ym
 
 ## Technical implementation
 
-- **Swift + AppKit**: Menu bar app, overlay window, screen positioning, drag and drop, and top-edge pointer activation; the activation area is confined to the menu bar band and grows below it only for the duration of a file drag, and system window visibility keeps it isolated from Mission Control.
-- **SwiftUI**: File Shelf, selection state, settings menu, and coffee-cup control.
+- **Swift + AppKit**: Menu bar app with a click-to-toggle status item and SF Symbols effects, overlay window, screen positioning, drag and drop, and top-edge pointer activation; the activation area is confined to the menu bar band and grows below it only for the duration of a file drag, and system window visibility keeps it isolated from Mission Control.
+- **SwiftUI**: File Shelf, selection state, settings menu, coffee-cup control, and the Keep Awake timer beside the notch.
 - **UserDefaults**: Stores Shelf path references and the selected trigger mode.
 - **`/usr/bin/caffeinate` + `NSWorkspace`**: Provides basic sleep prevention without administrator privileges and stops proactively when macOS sends a sleep notification.
