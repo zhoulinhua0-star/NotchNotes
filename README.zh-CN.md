@@ -90,8 +90,14 @@
 
 1. 打开 [Releases](https://github.com/zhoulinhua0-star/NotchNotes/releases)，下载最新 Release 中的 `NotchNotes.zip`。
 2. 解压后把 `NotchNotes.app` 拖入“应用程序”。
-3. 首次启动时右键点击应用并选择“打开”。
-4. 如果 macOS 仍然拦截，请前往“系统设置 → 隐私与安全性”，点击“仍要打开”。
+3. 打开 NotchNotes。如果 macOS 提示“未打开‘NotchNotes’”，请点击 **完成**（不要点“移到废纸篓”）。
+4. 前往“系统设置 → 隐私与安全性”，滚动到“安全性”，在 NotchNotes 旁点击 **仍要打开**，再用密码或触控 ID 确认。每个下载的版本只需操作一次。
+
+在 macOS 15 及更高版本中，右键点击应用并选择“打开”已无法跳过这项检查。也可以在 Terminal 中清除下载标记：
+
+```bash
+xattr -dr com.apple.quarantine /Applications/NotchNotes.app
+```
 
 > [!IMPORTANT]
 > 如果 Releases 页面还没有 `NotchNotes.zip`，说明这个 fork 尚未完成首次发布。请先按下方步骤本地构建，或由仓库维护者在 Actions 中运行“发布 macOS 应用”工作流。

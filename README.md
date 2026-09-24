@@ -90,8 +90,14 @@ With Reduce Motion turned on in System Settings, the icon and the timer change w
 
 1. Open [Releases](https://github.com/zhoulinhua0-star/NotchNotes/releases) and download `NotchNotes.zip` from the latest release.
 2. Unzip it and drag `NotchNotes.app` into Applications.
-3. On first launch, right-click the app and choose Open.
-4. If macOS still blocks it, open System Settings → Privacy & Security and click Open Anyway.
+3. Open NotchNotes. When macOS says “NotchNotes” Not Opened, click **Done** (not Move to Trash).
+4. Open System Settings → Privacy & Security, scroll to Security, click **Open Anyway** next to NotchNotes, and confirm with your password or Touch ID. You only need to do this once per downloaded version.
+
+On macOS 15 and later, right-clicking the app and choosing Open no longer skips this check. If you prefer Terminal, this clears the download flag instead:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/NotchNotes.app
+```
 
 > [!IMPORTANT]
 > If the Releases page does not contain `NotchNotes.zip`, this fork has not completed its first release yet. Build it locally with the steps below, or ask the repository maintainer to run the “Release macOS App” workflow in Actions.
