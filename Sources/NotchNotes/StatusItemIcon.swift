@@ -76,4 +76,14 @@ final class StatusItemIcon {
 /// Lets clicks fall through to the status bar button underneath.
 private final class PassthroughImageView: NSImageView {
     override func hitTest(_ point: NSPoint) -> NSView? { nil }
+
+    /// The menu bar flips between light and dark with the wallpaper or window behind it,
+    /// but a symbol set via setSymbolImage stays rendered in its old tint. Re-assign it
+    /// so the template image is drawn again for the new appearance.
+    override func viewDidChangeEffectiveAppearance() {
+        super.viewDidChangeEffectiveAppearance()
+        guard let current = image else { return }
+        image = nil
+        image = current
+    }
 }
