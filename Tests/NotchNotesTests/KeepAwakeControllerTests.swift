@@ -3,11 +3,11 @@ import XCTest
 @testable import NotchNotes
 
 final class KeepAwakeControllerTests: XCTestCase {
-    func testCommandMatchesCaffeinateDisplayAndIdleAssertions() {
+    func testCommandMatchesCaffeinateIdleAssertion() {
         let command = CaffeinateCommand(appProcessID: 4321)
 
         XCTAssertEqual(command.executableURL.path, "/usr/bin/caffeinate")
-        XCTAssertEqual(command.arguments, ["-di", "-w", "4321"])
+        XCTAssertEqual(command.arguments, ["-i", "-w", "4321"])
     }
 
     func testCommandDoesNotRequestClosedLidOrAdministratorBehavior() {

@@ -9,7 +9,7 @@ struct CaffeinateCommand: Equatable {
     }
 
     var arguments: [String] {
-        ["-di", "-w", String(appProcessID)]
+        ["-i", "-w", String(appProcessID)]
     }
 }
 

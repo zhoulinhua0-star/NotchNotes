@@ -61,7 +61,7 @@ The trigger area stays inside the menu bar, so it never covers the window below.
 Click the menu bar tray icon, or the coffee cup in the top-right corner of the Shelf. NotchNotes runs the following command in the background:
 
 ```bash
-/usr/bin/caffeinate -di -w <NotchNotes PID>
+/usr/bin/caffeinate -i -w <NotchNotes PID>
 ```
 
 - **Menu bar icon**: The tray icon is outlined while Keep Awake is off and filled while it is on. Each time the state changes, a coffee cup briefly takes its place: it bounces in when Keep Awake turns on and drops away when it turns off. The icon returns to the outline as soon as Keep Awake stops, including when the background `caffeinate` process exits unexpectedly.
@@ -72,7 +72,7 @@ With Reduce Motion turned on in System Settings, the icon and the timer change w
 
 | Action | Keep Awake state |
 | --- | --- |
-| Click the menu bar icon or coffee cup to enable | Prevents display sleep and idle system sleep |
+| Click the menu bar icon or coffee cup to enable | Prevents idle system sleep while allowing the display to sleep normally |
 | Click again or quit NotchNotes | Stops immediately |
 | Close the lid or choose Sleep from the Apple menu | Stops before macOS enters system sleep |
 | Open the lid or wake the Mac | Remains off and does not resume automatically |
